@@ -1,0 +1,11 @@
+HttpSession session = request.getSession();
+
+//고객인 경우
+session.getAttribute("customerNum");
+
+//업주인 경우
+int truckId = Integer.parseInt(session.getAttribute("truckId").toString());
+session.getAttribute("ownerNum");
+
+//공통
+session.getAttribute("id");

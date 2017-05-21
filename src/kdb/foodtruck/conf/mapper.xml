@@ -1,0 +1,423 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kdb.foodtruck.mapper">
+	
+	<!-- sales sql -->
+	<insert id="insertSales" parameterType="Sales">
+		
+		insert into sales values(sales_seq.nextval, #{foodtruckNum}, default, #{salesValue})
+		
+		<selectKey keyProperty="salesNum" resultType="int" order="BEFORE">
+            select sales_seq.nextval from dual
+        </selectKey>
+	
+	</insert>
+   
+   <select id="selectAllSales" parameterType="int" resultType="Sales">
+	   
+	      select * from sales where foodtrucknum=#{_parameter} order by salesdate desc
+   
+   </select>
+   
+   <select id="selectNowDaySales" parameterType="int" resultType="Sales">
+   	select * from sales where foodtrucknum=#{_parameter} and to_char(salesdate,'MM') = to_char(sysdate,'MM')
+   </select>
+   
+   <select id="selectSalesMonthValue" parameterType="int" resultType="Sales">
+   	
+   	<![CDATA[
+   		select 	sum(salesvalue) as salesvalue, TO_CHAR(salesdate,'MM') as salesmonth
+		from 	sales
+		where	foodtrucknum = #{_parameter}
+		group by TO_CHAR(salesdate,'MM')
+		order by salesmonth
+   	]]>
+   
+   </select>
+	
+	<select id="selectWeekSalesValue" parameterType="map" resultType="Sales">
+	   
+	    select 	sum(salesvalue) as salesvalue, TO_CHAR(salesdate,'D') as salesweek
+		from 	sales
+		where	foodtrucknum=#{truck} and salesdate between TRUNC(#{month}, 'D') and TRUNC(#{month}, 'D')+6 
+		group by TO_CHAR(salesdate,'D')
+		order by salesweek
+   
+   </select>
+   
+   <select id="selectWeekSales" parameterType="int" resultType="Sales">
+	   
+	    	select * 
+		  from sales 
+		  where foodtrucknum=#{_parameter} and
+		  		salesdate between TRUNC(SYSDATE, 'D') and TRUNC(SYSDATE, 'D')+6 
+		  order by salesdate
+		   
+   </select>
+   
+   <select id="selectSalesDayValue" parameterType="map" resultType="Sales">
+   	
+   	<![CDATA[
+   		select 	sum(salesvalue) as salesvalue, TO_CHAR(salesdate,'DD') as salesday
+		from 	sales
+		where	foodtrucknum=#{truck} and to_char(salesdate,'MM') = #{month} and to_char(salesdate,'YYYY')=to_char(sysdate,'YYYY')
+		group by TO_CHAR(salesdate,'DD')
+		order by salesday
+   	]]>
+   
+   </select>
+   
+   <update id="updateSales" parameterType="Sales">
+   		update sales set salesvalue=#{salesValue} where salesdate=#{salesDate}
+   </update>
+   
+   <!-- customer sql -->
+   <insert id="insertCustomer" parameterType="Customer"> 
+
+	insert into customer 
+	 	values (customer_seq.nextval, #{customerName},#{customerEmail}, #{customerPwd}, #{customerPnum}, #{customerAddr}, #{customerGender}, #{customerBdate}) 
+	
+	         <selectKey keyProperty="customerNum" resultType="int" order="AFTER"> 
+	           select customer_seq.nextval from dual 
+	         </selectKey> 
+	</insert>
+	
+	<select id="checkCustomer" parameterType="String" resultType="Customer">
+		<![CDATA[
+   		select *
+		from customer
+		where customeremail=#{_parameter}
+   		]]>
+	</select> 
+	
+	<select id="selectOneCustomer" parameterType="Customer" resultType="Customer">
+		<![CDATA[
+   		select *
+		from customer
+		where customernum=#{customerNum}
+   		]]>
+	</select> 
+	
+	<update id="updateCustomer" parameterType="Customer">
+   		update customer 
+   		set customername=#{customerName}, customerpwd=#{customerPwd}, 
+   			customerpnum=#{customerPnum}, customeraddr=#{customerAddr},
+   			customerbdate=#{customerBdate} 
+   		where customernum=#{customerNum}
+   </update>
+	
+	<!-- owner sql -->
+	<select id="checkOwner" parameterType="String" resultType="Owner">
+		<![CDATA[
+   		select *
+		from owner
+		where owneremail=#{_parameter}
+   		]]>
+	</select>
+	
+	<select id="showOwner" parameterType="int" resultType="Owner">
+			SELECT OWNERNAME,OWNERPNUM FROM FOODTRUCK A, OWNER B WHERE A.FOODTRUCKOWNUM = B.OWNERNUM AND A.FOODTRUCKNUM = #{_parameter}
+	</select>
+	
+	<select id="selectOwnerInfo" parameterType="int" resultType="Owner">
+		select *
+		from owner
+		where ownernum=#{_parameter}
+	</select>
+	
+	<!-- 푸드트럭 sql -->
+	<select id="showFavorite" resultType="Foodtruck">
+		<![CDATA[
+			SELECT * FROM (SELECT * FROM FOODTRUCK ORDER BY FOODTRUCKLIKE DESC ) WHERE ROWNUM <= 3 
+		]]>
+    </select>
+    
+    <select id="selectLike" parameterType="int" resultType="int">
+    	<![CDATA[
+    		select 	foodtrucklike 
+    		from 	foodtruck 
+    		where	foodtrucknum = #{_parameter}
+    	]]>
+    </select>
+	
+	<select id="showFoodtruckInfo" parameterType="int" resultType="Foodtruck">
+			SELECT * FROM FOODTRUCK WHERE FOODTRUCKNUM = #{_parameter}
+	</select>
+	
+	
+	<select id="selectFoodtruckNumber" parameterType="int" resultType="int">
+			SELECT foodtrucknum FROM FOODTRUCK WHERE FOODTRUCKOWNUM = #{_parameter}
+	</select>
+	
+	<select id="selectFoodTruck" parameterType="String" resultType="Foodtruck"> 
+      select * from foodtruck 
+        WHERE foodtruckname like '%'||UPPER(#{query})||'%' OR foodtruckaddr  like '%'||#{query}||'%'
+   </select>
+   
+   <select id="selectFoodTruckName" parameterType="String" resultType="Foodtruck"> 
+      select * from foodtruck 
+        WHERE foodtruckname like '%'||UPPER(#{query})||'%'
+   </select>
+   
+   <select id="selectFoodTruckLoc" parameterType="String" resultType="Foodtruck"> 
+      select * from foodtruck 
+        WHERE foodtruckaddr  like '%'||#{query}||'%'
+   </select>
+   
+   	<select id="selectEventFoodtruck" resultType="Foodtruck">
+	   	select f.*
+		from foodtruck f, event e
+		where f.foodtrucknum = e.foodtrucknum
+   	</select>
+   	
+   	<select id="selectEventFoodtruckCount" resultType="int">
+	   	select count(*)
+		from foodtruck f, event e
+		where f.foodtrucknum = e.foodtrucknum
+   	</select>
+   
+   <select id="selectFoodtruckListByPage" resultType="Foodtruck">
+		
+		select *
+		from foodtruck
+		order by foodtrucknum desc
+		
+   </select>
+   
+   <select id="selectCountFoodtruck" resultType="int">
+   	select count(*) from foodtruck
+   </select>
+
+	<!-- 메뉴 sql -->
+	<insert id="insertMenu" parameterType="Menu">
+		insert into menu(menunum, foodtrucknum, menuname, menuprice, menutype, menuexplain, menupic)
+		 values(menu_seq.nextval, #{foodTruckNum}, #{menuName}, #{menuPrice}, #{menuType}, #{menuExplain}, #{menuPic})
+	</insert>
+
+ 	<select id="showMenu" parameterType="int" resultType="Menu">
+			SELECT * FROM MENU WHERE FOODTRUCKNUM = #{_parameter}
+	</select>
+	
+	<update id="updateMenu" parameterType="Menu">
+		update menu 
+		set menuname=#{menuName}, menuprice=#{menuPrice}, menuType=#{menuType}, menuexplain=#{menuExplain}, menupic=#{menuPic}
+		where menunum=#{menuNum}
+	</update>
+	
+	<select id="selectOneMenu" parameterType="int" resultType="Menu">
+		select * from menu where menunum = #{_parameter}
+	</select>
+	
+	<delete id="deleteOneMenu" parameterType="int">
+		delete from menu where menunum=#{_parameter}
+	</delete>
+	
+	<!-- 이벤트 SQL -->
+	<select id="showEvent" parameterType="int" resultType="Event">
+			SELECT * FROM EVENT WHERE FOODTRUCKNUM = #{_parameter}
+	</select>
+	
+	<select id="showDistance" parameterType="map" resultType="Foodtruck">
+ 	
+		<![CDATA[
+		
+		 	SELECT * 
+		 		FROM 
+		 			(
+		 			  SELECT FOODTRUCKNUM , FOODTRUCKNAME , FOODTRUCKPIC,
+		 			    6371 * ACOS(COS( #{lat} * 0.017453293 ) * COS( FOODTRUCKADDRLAT * 0.017453293 ) 
+					    * COS( (FOODTRUCKADDRALT * 0.017453293) - (#{lon} * 0.017453293)) + SIN( #{lat} * 0.017453293 ) 
+					    * SIN( FOODTRUCKADDRLAT * 0.017453293 )
+					    ) AS DISTANCE
+			FROM FOODTRUCK ORDER BY DISTANCE) WHERE ROWNUM <= 3 
+			
+		 ]]>
+			
+	</select>
+	
+	<insert id="insertEvent" parameterType="Event"> 
+
+		insert into Event 
+		values(event_seq.nextval,#{foodTruckNum}, #{eventName},#{eventContents},#{eventStart} ,#{eventEnd}) 
+	
+	</insert>
+	
+	<select id="selectAllEvent" resultType="Event">
+		select * from Event
+	</select>
+
+	<delete id="deleteEvent" parameterType="int">
+		delete from Event where
+		eventNum = #{eventnum}
+	</delete>
+
+
+	<update id="UpdateEvent" parameterType="Event">
+		update Event
+		set eventName
+		= #{eventName}
+		,eventContents = #{eventContents}
+		,eventStart =
+		#{eventStart}
+		,eventEnd =
+		#{eventEnd}
+		where
+		eventNum = #{eventNum}
+	</update>
+	
+	<insert id="insertReview" parameterType="Review">
+		insert into Review
+		values
+		(review_seq.nextval,#{foodtruckNum},
+		#{customerNum},#{reviewContents}, default)
+	</insert>
+
+	<select id="selectAllReview" resultType="CustomerReview">
+		select
+		A.foodtruckNum,A.CustomerNum,C.CustomerName,A.reviewContents,A.reviewDate
+		from Review A,Customer C
+		where A.CustomerNum = C.CustomerNum
+	</select>
+
+	<select id="selectFoodReview" parameterType="int" resultType="CustomerReview">
+		select
+		A.ReviewNum,A.foodtruckNum,A.CustomerNum,C.CustomerName,A.reviewContents,A.reviewDate
+		from Review A,Customer C
+		where A.CustomerNum = C.CustomerNum and
+		A.foodtruckNum = #{foodtruckNum}
+	</select>
+	
+	<select id="selectRecentReview" parameterType="int" resultType="CustomerReview">
+		
+		<![CDATA[
+		select r.reviewnum, r.foodtrucknum, c.customernum, c.customername, r.reviewcontents, r.reviewdate
+		from review r, customer c 
+		where 	r.foodtrucknum = #{foodtruckNum} and
+				r.customernum  = c.customernum and
+				substr(SYSTIMESTAMP-reviewdate,12,2)='00'
+		]]>
+		
+	</select>
+
+	<delete id="deleteReview" parameterType="int">
+		delete from Review where
+		reviewNum = #{reviewNum}
+	</delete>
+	
+	<select id="showDistance24" parameterType="map" resultType="Foodtruck">
+ 	
+		<![CDATA[
+		
+			SELECT FOODTRUCKNUM,FOODTRUCKNAME,FOODTRUCKPIC,DISTANCE
+			FROM 
+		    	(SELECT FOODTRUCKNUM,FOODTRUCKNAME,FOODTRUCKPIC,DISTANCE, ROWNUM AS rnum 
+		    	FROM (SELECT FOODTRUCKNUM , FOODTRUCKNAME,FOODTRUCKPIC , 6371 * ACOS(COS( #{lat} * 0.017453293 ) * COS( FOODTRUCKADDRLAT * 0.017453293 ) 
+		                                     * COS( (FOODTRUCKADDRALT * 0.017453293) - (#{lon} * 0.017453293)) + SIN( #{lat} * 0.017453293 ) 
+		                                     * SIN( FOODTRUCKADDRLAT * 0.017453293 )) AS DISTANCE
+		         	FROM FOODTRUCK ORDER BY DISTANCE)
+		    	WHERE ROWNUM <= 4)
+			WHERE rnum > 1
+			
+		]]>
+			
+	</select>
+	
+	<!-- 메시지 sql -->
+	<select id="selectReceivedMessage" parameterType="int" resultType="Message">
+		select m.*, s.ownername as msgsendername, s.owneremail as msgsenderemail, r.ownername as msgreceivername, r.owneremail as msgreceiveremail
+		from message m, owner s, owner r
+		where 	m.msgreceiver=#{_parameter} and
+				r.ownernum=m.msgreceiver and
+				s.ownernum=m.msgsender
+	</select>
+	
+	<select id="selectReceivedOneMessage" parameterType="int" resultType="Message">
+		select m.*, s.ownername as msgsendername, s.owneremail as msgsenderemail, r.ownername as msgreceivername, r.owneremail as msgreceiveremail
+		from message m, owner s, owner r
+		where m.msgnum=#{_parameter} and
+				r.ownernum=m.msgreceiver and
+				s.ownernum=m.msgsender
+	</select>
+	
+	<select id="selectRecentMessage" parameterType="int" resultType="Message">
+		<![CDATA[
+		select m.*, s.ownername as msgsendername, s.owneremail as msgsenderemail, r.ownername as msgreceivername, r.owneremail as msgreceiveremail
+		from message m, owner s, owner r
+		where 	m.msgreceiver=#{_parameter} and
+				r.ownernum=m.msgreceiver and
+				s.ownernum=m.msgsender	and
+				substr(SYSTIMESTAMP-m.msgdate,12,2)='00'
+		order by m.msgdate desc
+		]]>
+	</select>
+	
+	<insert id="insertMail" parameterType="Message">
+		insert into message(msgnum, msgsender, msgreceiver, msgtitle, msgcontent, msgdate)
+		 values(msg_seq.nextval, #{msgsender}, #{msgreceiver}, #{msgtitle}, #{msgcontent}, default)
+	</insert>
+	
+	<delete id="deleteMail" parameterType="int">
+		delete from message where msgnum=#{_parameter}
+	</delete>
+	
+	<insert id="insertSearch" parameterType="Search">
+		insert into search values(search_seq.nextval, #{foodtrucknum}, #{searchword}, default)
+	</insert>
+	
+	<select id="selectSearch" parameterType="int" resultType="Search">
+		select 	*
+		from	search
+		where	foodtrucknum = #{_parameter}
+	</select>
+	
+	<select id="selectSearchWord" parameterType="String" resultType="Search">
+		select 	*
+		from	search
+		where	searchword = #{_parameter}
+	</select>
+	
+	<update id="updateSearchWord" parameterType="int">
+		update search
+		set searchcount=searchcount+1, searchdate = sysdate
+		where searchnum = #{_parameter}
+	</update>
+	
+	<!-- 푸드트럭 레지스터 추가 -->
+	<insert id="insertFoodtruck" parameterType="Foodtruck">
+		 
+		 insert into FoodTruck
+	  	 values (Foodtruck_seq.nextval, #{foodTruckName}, #{foodTruckOwnum}, #{foodTruckTypenum}, 
+	  	 #{foodTruckAddr}, #{foodTruckIntro}, #{foodTruckLike}, #{foodTruckAddrlat}, #{foodTruckAddralt}, #{foodTruckPic}, #{foodTruckOpen}, #{foodTruckClose} )
+	
+	</insert>
+	
+	<update id="updateOwner" parameterType="Owner">
+   		update owner 
+   		set ownername=#{ownerName}, ownerpwd=#{ownerPwd}, 
+   			ownerpnum=#{ownerPnum}, owneraddr=#{ownerAddr},
+   			ownerpic=#{ownerPic}
+   		where ownernum=#{ownerNum}
+   </update>
+   
+   <update id="updateFoodtruck" parameterType="Foodtruck">
+   		update foodtruck 
+   		set foodtruckname=#{foodtruckName}, 
+   			foodtruckopen=#{foodtruckOpen}, 
+   			foodtruckclose=#{foodtruckClose},
+   			foodtruckpic=#{foodtruckPic},
+   			foodtruckaddr=#{foodtruckAddr},
+   			foodtruckaddralt=#{foodtruckAddrAlt},
+   			foodtruckaddrlat=#{foodtruckAddrLat},
+   			foodtrucktypenum=#{foodtruckTypenum},
+   			foodtruckintro=#{foodtruckIntro}
+   		where foodtrucknum=#{foodtruckNum}
+   </update>
+   
+   <update id="updateFavorite" parameterType="int">
+		update foodtruck set foodtrucklike = foodtrucklike+1 where foodtrucknum = #{id}
+	</update>
+	
+</mapper>
